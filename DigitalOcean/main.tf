@@ -5,7 +5,7 @@ resource "digitalocean_droplet" "mail" {
   region = "nyc1"                   #https://www.digitalocean.com/docs/networking/vpc/                                 
   size = "s-1vcpu-1gb"              #https://developers.digitalocean.com/documentation/changelog/api-v2/new-size-slugs-for-droplet-plan-changes/
   private_networking = true
-  ssh_keys = [""]                   #Can add multiple ssh key names here. Get from DigitalOcean
+  ssh_keys = [""]                   #Can add multiple ssh key names here. Get from DigitalOcean. This is the fingerprint, not the name.
   tags   = ["TEST1"]                #Add whatever tags you want
 }
 
