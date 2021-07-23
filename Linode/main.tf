@@ -1,4 +1,3 @@
-# pip3 install linode-cli --upgrade
 terraform {
   required_providers {
     linode = {
@@ -8,15 +7,56 @@ terraform {
   }
 }
 
-# Configure the Linode Provider
-provider "linode" {
-  token = ""
-}
-
 resource "linode_sshkey" "dev" {
   label = "dev"
   ssh_key = chomp(file("~/.ssh/id_rsa.pub"))
 }
+
+variable "INBOUNDIP" {
+  type = string
+}
+
+variable "TOKEN" {
+  type = string
+}
+
+provider "linode" {
+  token = "${var.TOKEN}"
+}
+
+
+# Allow all inbound from lab and deny from anywhere else
+resource "linode_firewall" "my_firewall" {
+  label = "my_firewall"
+  tags  = ["lab_firewall"]
+
+  inbound {
+    label    = "allow-all-lab"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ipv4     = ["${var.INBOUNDIP}"]
+  }
+
+  inbound {
+    label    = "allow-all-lab"
+    action   = "ACCEPT"
+    protocol = "UDP"
+    ipv4     = ["${var.INBOUNDIP}"]
+  }
+
+  inbound {
+    label    = "allow-all-lab"
+    action   = "ACCEPT"
+    protocol = "ICMP"
+    ipv4     = ["${var.INBOUNDIP}"]
+  }
+  inbound_policy = "DROP"
+
+  outbound_policy = "ACCEPT"
+
+  linodes = [linode_instance.vpn.id]
+}
+
 
 /*Types
  1 - g6-nanode-1 : 1GB Nanode (1 vCPU):
@@ -50,10 +90,10 @@ resource "linode_sshkey" "dev" {
  */
 
 # Create a Linode
-resource "linode_instance" "web" {
+resource "linode_instance" "vpn" {
     label = "VPN"
     image = "linode/ubuntu20.04"
-    region = "us-east"  #https://api.linode.com/v4/regions
+    region = "us-southeast"  #https://api.linode.com/v4/regions
     type = "g6-nanode-1"
     authorized_keys = [linode_sshkey.dev.ssh_key]
     root_pass = "terr4form-test"
@@ -61,4 +101,10 @@ resource "linode_instance" "web" {
     group = "VPN"
     tags = [ "VPN" ]
     private_ip = false
+}
+
+# Get public IP of VPN server
+output "vpn_url" {  
+    description = "URL of load VPN"  
+    value       = "${resource.linode_instance.vpn.ip_address}"
 }
