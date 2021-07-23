@@ -7,57 +7,6 @@ terraform {
   }
 }
 
-resource "linode_sshkey" "dev" {
-  label = "dev"
-  ssh_key = chomp(file("~/.ssh/id_rsa.pub"))
-}
-
-variable "INBOUNDIP" {
-  type = string
-}
-
-variable "TOKEN" {
-  type = string
-}
-
-provider "linode" {
-  token = "${var.TOKEN}"
-}
-
-
-# Allow all inbound from lab and deny from anywhere else
-resource "linode_firewall" "my_firewall" {
-  label = "my_firewall"
-  tags  = ["lab_firewall"]
-
-  inbound {
-    label    = "allow-all-lab"
-    action   = "ACCEPT"
-    protocol = "TCP"
-    ipv4     = ["${var.INBOUNDIP}"]
-  }
-
-  inbound {
-    label    = "allow-all-lab"
-    action   = "ACCEPT"
-    protocol = "UDP"
-    ipv4     = ["${var.INBOUNDIP}"]
-  }
-
-  inbound {
-    label    = "allow-all-lab"
-    action   = "ACCEPT"
-    protocol = "ICMP"
-    ipv4     = ["${var.INBOUNDIP}"]
-  }
-  inbound_policy = "DROP"
-
-  outbound_policy = "ACCEPT"
-
-  linodes = [linode_instance.vpn.id]
-}
-
-
 /*Types
  1 - g6-nanode-1 : 1GB Nanode (1 vCPU):
  2 - g6-standard-1 : 2GB Linode (1 vCPU)
@@ -101,10 +50,4 @@ resource "linode_instance" "vpn" {
     group = "VPN"
     tags = [ "VPN" ]
     private_ip = false
-}
-
-# Get public IP of VPN server
-output "vpn_url" {  
-    description = "URL of load VPN"  
-    value       = "${resource.linode_instance.vpn.ip_address}"
 }
